@@ -9,7 +9,7 @@ app = Flask(__name__)
 # KAFKA CONFIGURATION
 # ============================================================
 
-KAFKA_BROKER = "localhost:9092"
+KAFKA_BROKER = "kafka:29092"
 KAFKA_TOPIC = "website-visitors"
 
 producer = KafkaProducer(

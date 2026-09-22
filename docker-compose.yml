@@ -1,0 +1,70 @@
+services:
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.7.7
+    container_name: visitor-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.7.7
+    container_name: visitor-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092,EXTERNAL://localhost:9092
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:29092,EXTERNAL://0.0.0.0:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+
+  producer:
+    build:
+      context: ./producer
+    container_name: visitor-producer
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "5000:5000"
+
+  consumer:
+    build:
+      context: ./consumer
+    container_name: visitor-consumer
+    depends_on:
+      kafka:
+        condition: service_healthy
+    volumes:
+      - visitor-data:/app/data
+    working_dir: /app/data
+    command: sh -c "cp /app/consumer.py /tmp/consumer.py && sed -i 's#DB_NAME = \"visitors.db\"#DB_NAME = \"/app/data/visitors.db\"#' /tmp/consumer.py && python /tmp/consumer.py"
+
+  dashboard:
+    build:
+      context: ./dashboard
+    container_name: visitor-dashboard
+    depends_on:
+      - consumer
+    ports:
+      - "5001:5001"
+    volumes:
+      - visitor-data:/app/data
+    working_dir: /app
+    command: sh -c "sed -i 's#DATABASE = \"../consumer/visitors.db\"#DATABASE = \"/app/data/visitors.db\"#' app.py && python app.py"
+
+volumes:
+  visitor-data:

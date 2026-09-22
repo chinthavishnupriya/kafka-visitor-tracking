@@ -71,3 +71,27 @@ The project therefore demonstrates a complete **real-time event-processing pipel
                     │ Flask Dashboard     │
                     │     Port 5001      │
                     └─────────────────────┘
+
+## Docker Deployment
+
+The complete Kafka Visitor Tracking System can be deployed using Docker Compose.
+
+### Docker Architecture
+
+```text
+Browser
+   |
+   v
+Producer Container (Flask :5000)
+   |
+   v
+Kafka Container
+   |
+   v
+Consumer Container
+   |
+   v
+SQLite Database
+   |
+   v
+Dashboard Container (Flask :5001)

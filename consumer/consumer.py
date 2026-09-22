@@ -54,7 +54,7 @@ conn.commit()
 
 consumer = KafkaConsumer(
     TOPIC,
-    bootstrap_servers=["localhost:9092"],
+    bootstrap_servers=["kafka:29092"],
     group_id="visitor-summary-final",
     auto_offset_reset="latest",
     enable_auto_commit=True,
