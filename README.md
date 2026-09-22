@@ -1,88 +1,73 @@
 # Kafka Real-Time Website Visitor Tracking & Analytics
 
-A real-time website visitor tracking and analytics system built using
-Flask, Apache Kafka, Python, SQLite, and HTML/CSS/JavaScript.
+A real-time website visitor tracking and analytics system built using **Python, Flask, Apache Kafka, SQLite, HTML, CSS, and JavaScript**.
+
+The project demonstrates how website visitor activity can be captured as events, transmitted through Apache Kafka, processed by a Kafka consumer, stored in SQLite, and presented through a web-based analytics dashboard.
+
+---
 
 ## Project Overview
 
-This project records website visitor activity and processes the events
-through Apache Kafka.
+The system tracks visitors who access a Flask-based website.
 
-Each visitor receives a unique visitor ID. When the visitor opens the
-website, a `page_visit` event is generated and sent to Kafka.
+Whenever the website is opened or refreshed:
 
-The Kafka consumer receives these events and stores them in SQLite.
-A separate Flask dashboard reads the database and displays real-time
-visitor analytics.
+1. A unique visitor ID is generated for a new browser.
+2. The visitor ID is stored in browser `localStorage`.
+3. A `page_visit` event is created.
+4. The event is sent to a Flask `/track` API.
+5. The Flask producer publishes the event to Apache Kafka.
+6. Kafka stores the event in the `website-visitors` topic.
+7. A Python Kafka consumer receives the event.
+8. The consumer stores the event in SQLite.
+9. Visitor statistics are updated.
+10. A separate Flask dashboard reads the SQLite database and displays analytics.
 
-## Architecture
+The project therefore demonstrates a complete **real-time event-processing pipeline**.
 
-Browser
-   |
-   v
-Flask Producer
-   |
-   v
-Apache Kafka
-   |
-   v
-website-visitors Topic
-   |
-   v
-Python Kafka Consumer
-   |
-   v
-SQLite Database
-   |
-   v
-Flask Analytics Dashboard
+---
 
+## System Architecture
 
-## Technologies Used
-
-- Python 3
-- Flask
-- Apache Kafka
-- kafka-python-ng
-- SQLite
-- HTML
-- CSS
-- JavaScript
-- Linux / Ubuntu
-
-
-## Main Components
-
-### 1. Producer
-
-Location:
-
-`producer/app.py`
-
-Responsibilities:
-
-- Runs the visitor website
-- Generates visitor IDs
-- Stores visitor ID in browser localStorage
-- Sends visitor events to Kafka
-- Provides the `/track` API endpoint
-
-
-### 2. Kafka
-
-Kafka topic:
-
-`website-visitors`
-
-Kafka receives visitor events from the Flask producer.
-
-Example event:
-
-```json
-{
-    "visitor_id": "visitor-example-123",
-    "page": "/",
-    "ip_address": "172.23.16.1",
-    "timestamp": "2026-09-22T08:52:43+00:00",
-    "event": "page_visit"
-}
+```text
+                    ┌─────────────────────┐
+                    │   Web Browser       │
+                    │ HTML/CSS/JavaScript │
+                    └──────────┬──────────┘
+                               │
+                               │ Page Visit
+                               ▼
+                    ┌─────────────────────┐
+                    │   Flask Producer    │
+                    │      Port 5000      │
+                    └──────────┬──────────┘
+                               │
+                               │ JSON Event
+                               ▼
+                    ┌─────────────────────┐
+                    │    Apache Kafka     │
+                    │                     │
+                    │ website-visitors    │
+                    │   3 Partitions      │
+                    └──────────┬──────────┘
+                               │
+                               │ Consume Events
+                               ▼
+                    ┌─────────────────────┐
+                    │  Python Consumer    │
+                    │   Kafka Consumer    │
+                    └──────────┬──────────┘
+                               │
+                               │ Store / Update
+                               ▼
+                    ┌─────────────────────┐
+                    │   SQLite Database   │
+                    │     visitors.db    │
+                    └──────────┬──────────┘
+                               │
+                               │ Read Analytics
+                               ▼
+                    ┌─────────────────────┐
+                    │ Flask Dashboard     │
+                    │     Port 5001      │
+                    └─────────────────────┘
